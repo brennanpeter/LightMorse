@@ -23,6 +23,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     var encodeMessage: String!
     var prettyEncodedMessage: String!
     
+    let duration = UInt32(250000)    // length of a 1 morse unit in milliseconds
+    
     // hiding and showing the main menu
     func toggleButtons(){
         decodeButton.isHidden =  !decodeButton.isHidden
@@ -176,6 +178,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         return false
     }
     
+    func sleepForUnit(numUnits: Int){
+        for x in (0...numUnits){
+            usleep(duration)      // Declare a unit
+            //print("sleep")
+        }
+    }
+    
     @objc func sendMessage (sender: UIButton) {
         print("Sending")
         
@@ -186,41 +195,37 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
                 // turn on the torch
                 toggleTorch(on: true)
                 // wait 1 unit
+                sleepForUnit(numUnits: 1)
                 // turn off the torch
                 toggleTorch(on: false)
                 // wait 1 unit
+                sleepForUnit(numUnits: 1)
             case "-":
                 print("-")
                 // turn on the torch
                 toggleTorch(on: true)
                 // wait 3 units
+                sleepForUnit(numUnits: 3)
                 // turn off the torch
                 toggleTorch(on: false)
                 // wait 1 unit
+                sleepForUnit(numUnits: 1)
             case "|":
                 print("|")
                 // wait for 2 extra units
+                sleepForUnit(numUnits: 2)
                 // to get the 3 unit wait time at the end of a letter
             case " ":
                 print("Space")
                 // wait for 4 extra units
+                sleepForUnit(numUnits: 4)
                 // we will have just finished a letter so we only need to wait for an additional 4 units
             default:
                 print("Unexpected Character in Morse String")
                 
             }
-            // decide to toggle the flashLight on
-            
-            
-            // classify the amount of time we should wait
-            
-            
-            // if the torch is on turn it off
-            
-            
             
         }
-
     }
     
     func decodeMorse(){
@@ -276,10 +281,10 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         for c in localChars {
             if c == " " {
-                result = result + "       "
+                result = result + " "
             }
             else {
-                result = result + (morseCharsDict[ String(c) ] ?? "") + " "
+                result = result + (morseCharsDict[ String(c) ] ?? "")
             }
             
         }
