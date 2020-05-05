@@ -8,27 +8,9 @@
 
 import UIKit
 import AVKit
-import Accelerate
+import CoreImage
 
 class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, UITextFieldDelegate {
-    
-    // reuasable variables for image processing
-    
-    var cgImageFormat = vImage_CGImageFormat(
-    bitsPerComponent: 8,
-    bitsPerPixel: 32,
-    colorSpace: nil,
-    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue),
-    version: 0,
-    decode: nil,
-    renderingIntent: .defaultIntent)
-    
-    
-    var converter: vImageConverter?
-
-    var sourceBuffers = [vImage_Buffer]()
-    var destinationBuffer = vImage_Buffer()
-    
     
     // main menu UI components
     var decodeButton: UIButton!
@@ -301,8 +283,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
          so I used this guide to calculate the luminance of the image
          */
 
-        
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+        guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return
         }
         
@@ -320,83 +301,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     func calculateLuminance(pixelBuffer: CVImageBuffer){
         print("calculate luminance")
-        
-        // boiler plate for converting a cvImage into a vImage copied from that guide
-        
-        // boilerplate Starts
-        var error = kvImageNoError
-
-        if converter == nil {
-            let cvImageFormat = vImageCVImageFormat_CreateWithCVPixelBuffer(pixelBuffer).takeRetainedValue()
-            
-            vImageCVImageFormat_SetColorSpace(cvImageFormat,
-                                              CGColorSpaceCreateDeviceRGB())
-            
-            vImageCVImageFormat_SetChromaSiting(cvImageFormat,
-                                                kCVImageBufferChromaLocation_Center)
-            
-            guard
-                let unmanagedConverter = vImageConverter_CreateForCVToCGImageFormat(
-                    cvImageFormat,
-                    &cgImageFormat,
-                    nil,
-                    vImage_Flags(kvImagePrintDiagnosticsToConsole),
-                    &error),
-                error == kvImageNoError else {
-                    print("vImageConverter_CreateForCVToCGImageFormat error:", error)
-                    return
-            }
-            
-            converter = unmanagedConverter.takeRetainedValue()
-        }
-        
-        if sourceBuffers.isEmpty {
-            let numberOfSourceBuffers = Int(vImageConverter_GetNumberOfSourceBuffers(converter!))
-            sourceBuffers = [vImage_Buffer](repeating: vImage_Buffer(),
-                                            count: numberOfSourceBuffers)
-        }
-        
-        error = vImageBuffer_InitForCopyFromCVPixelBuffer(
-            &sourceBuffers,
-            converter!,
-            pixelBuffer,
-            vImage_Flags(kvImageNoAllocate))
-
-        guard error == kvImageNoError else {
-            return
-        }
-        
-        if destinationBuffer.data == nil {
-            error = vImageBuffer_Init(&destinationBuffer,
-                                      UInt(CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)),
-                                      UInt(CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)),
-                                      cgImageFormat.bitsPerPixel,
-                                      vImage_Flags(kvImageNoFlags))
-            
-            guard error == kvImageNoError else {
-                return
-            }
-        }
-        
-        error = vImageConvert_AnyToAny(converter!,
-                                       &sourceBuffers,
-                                       &destinationBuffer,
-                                       nil,
-                                       vImage_Flags(kvImageNoFlags))
-
-        guard error == kvImageNoError else {
-            return
-        }
-        // Boilerplate ends
-        
-        print( destinationBuffer )
-    
-        // Calculate the histogram for the image
-        //vImageHistogramCalculation_ARGB8888(&destinationBuffer, histogram, vImage_Flags(kvImageLeaveAlphaUnchanged))
-
-        guard error == kvImageNoError else {
-            return
-        }
         
         
         // Display the luminance
