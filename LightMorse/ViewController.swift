@@ -9,17 +9,57 @@
 import UIKit
 import AVKit
 
-class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, UITextFieldDelegate {
     
     var decodeButton: UIButton!
     var encodeButton: UIButton!
     var helpButton: UIButton!
+    var backButton: UIButton!
     
     func toggleButtons(){
         decodeButton.isHidden =  !decodeButton.isHidden
         encodeButton.isHidden =  !encodeButton.isHidden
         helpButton.isHidden =  !helpButton.isHidden
     }
+    
+    var morseCharsDict: [String: String] = [
+        "A":".-",
+        "B":"-...",
+        "C":"-.-.",
+        "D":"-..",
+        "E":".",
+        "F":"..-.",
+        "G":"--.",
+        "H":"....",
+        "I":"..",
+        "J":".---",
+        "K":"-.-",
+        "L":".-..",
+        "M":"--",
+        "N":"-.",
+        "O":"---",
+        "P":".--.",
+        "Q":"--.-",
+        "R":".-.",
+        "S":"...",
+        "T":"-",
+        "U":"..-",
+        "V":"...-",
+        "W":".--",
+        "X":"-..-",
+        "Y":"-.--",
+        "Z":"--..",
+        "1":".----",
+        "2":"..---",
+        "3":"...--",
+        "4":"....-",
+        "5":".....",
+        "6":"-....",
+        "7":"--...",
+        "8":"---..",
+        "9":"----.",
+        "0":"-----"
+    ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -71,11 +111,31 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func encodeMorse(){
-        // add a text box
-        let textInput = UITextField(frame: CGRect(x: 100, y: 310, width: 200, height: 100))
-        //encodeButton.insertTextPlaceholder(with: <#T##CGSize#>)("Encode", for: .normal)
-        let textView = UIView(frame: textInput.frame)
-        textView.addSubview(textInput)
+        // add a text box programatically
+        //https://stackoverflow.com/questions/24710041/adding-uitextfield-on-uiview-programmatically-swift/32602425
+        let textInput = UITextField(frame: CGRect(x: 20, y: 100, width: 200, height: 40))
+        textInput.placeholder = "Enter your message here"
+        textInput.font = UIFont.systemFont(ofSize: 15)
+        textInput.borderStyle = UITextField.BorderStyle.roundedRect
+        textInput.layer.borderColor = UIColor.black.cgColor
+        textInput.autocorrectionType = UITextAutocorrectionType.no
+        textInput.keyboardType = UIKeyboardType.default
+        textInput.returnKeyType = UIReturnKeyType.done
+        textInput.clearButtonMode = UITextField.ViewMode.whileEditing
+        textInput.contentVerticalAlignment = UIControl.ContentVerticalAlignment.center
+        textInput.delegate = self
+        self.view.addSubview(textInput)
+        
+        
+        let morseOutput = UITextView(frame: CGRect(x: 20, y: 150, width: 300, height: 40))
+        morseOutput.center = self.view.center
+        morseOutput.font = UIFont.systemFont(ofSize: 15)
+        morseOutput.textAlignment = NSTextAlignment.left
+        morseOutput.layer.borderColor = UIColor.lightGray.cgColor
+        morseOutput.layer.borderWidth = 1
+        morseOutput.layer.cornerRadius = 6
+        morseOutput.text =
+        self.view.addSubview(morseOutput)
         
         // add an output window showing the converted morse
         // add a button to start encoding
@@ -103,6 +163,15 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         dataOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "video queue"))
         captureSession.addOutput(dataOutput)
         
+        // Add a button to close the cpature window and bring us back to the main menu
+        backButton = UIButton(frame: CGRect(x: 10, y: 10, width: 50, height: 50))
+        backButton.backgroundColor = .red
+        backButton.layer.cornerRadius = 6
+        backButton.setTitle("Back", for: .normal)
+        backButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
+
+        self.view.addSubview(backButton)
+        
     }
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -113,6 +182,10 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func showHelp(){
+        
+    }
+    
+    func convertToMorseChars(chars: String){
         
     }
 
