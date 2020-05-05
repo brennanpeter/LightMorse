@@ -8,9 +8,29 @@
 
 import UIKit
 import AVKit
+import Accelerate
 
 class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, UITextFieldDelegate {
-    // main menu
+    
+    // reuasable variables for image processing
+    
+    var cgImageFormat = vImage_CGImageFormat(
+    bitsPerComponent: 8,
+    bitsPerPixel: 32,
+    colorSpace: nil,
+    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue),
+    version: 0,
+    decode: nil,
+    renderingIntent: .defaultIntent)
+    
+    
+    var converter: vImageConverter?
+
+    var sourceBuffers = [vImage_Buffer]()
+    var destinationBuffer = vImage_Buffer()
+    
+    
+    // main menu UI components
     var decodeButton: UIButton!
     var encodeButton: UIButton!
     var helpButton: UIButton!
@@ -71,6 +91,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         "9":"----.|",
         "0":"-----|"
     ]
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -179,7 +200,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func sleepForUnit(numUnits: Int){
-        for x in (0...numUnits){
+        for _ in (0...numUnits){
             usleep(duration)      // Declare a unit
             //print("sleep")
         }
@@ -261,10 +282,125 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        print("Captured a frame: ", Date())
+        //print("Captured a frame: ", Date())
         
-        let pixelMap = CMSampleBufferGetImageBuffer(sampleBuffer)!
+        /*
+         I learned how to get the raw pixel information out of the swift 3 solution on
+         https://stackoverflow.com/questions/34569750/get-pixel-value-from-cvpixelbufferref-in-swift
+         but i had to scrap this becuase I wanted to calculate the histograms for the images using apples own functions
+         I found documentation here
+         
+         on how to do this
+         https://developer.apple.com/documentation/accelerate/1545752-vimagehistogramcalculation_argbf
+            and
+         http://flexmonkey.blogspot.com/2016/04/vimage-histogram-functions-part-ii.html
+         
+         but then i found *better* documentation here:
+         https://developer.apple.com/documentation/accelerate/applying_vimage_operations_to_video_sample_buffers
+         
+         so I used this guide to calculate the luminance of the image
+         */
+
         
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return
+        }
+        
+        // claim the pixelBuffer for my own use #manifestDestiny
+        CVPixelBufferLockBaseAddress(pixelBuffer,
+                                     CVPixelBufferLockFlags.readOnly)
+        // this where my code will be
+        //displayEqualizedPixelBuffer(pixelBuffer: pixelBuffer)
+        calculateLuminance(pixelBuffer: pixelBuffer)
+        
+        CVPixelBufferUnlockBaseAddress(pixelBuffer,
+                                       CVPixelBufferLockFlags.readOnly)
+        
+    }
+    
+    func calculateLuminance(pixelBuffer: CVImageBuffer){
+        print("calculate luminance")
+        
+        // boiler plate for converting a cvImage into a vImage copied from that guide
+        
+        // boilerplate Starts
+        var error = kvImageNoError
+
+        if converter == nil {
+            let cvImageFormat = vImageCVImageFormat_CreateWithCVPixelBuffer(pixelBuffer).takeRetainedValue()
+            
+            vImageCVImageFormat_SetColorSpace(cvImageFormat,
+                                              CGColorSpaceCreateDeviceRGB())
+            
+            vImageCVImageFormat_SetChromaSiting(cvImageFormat,
+                                                kCVImageBufferChromaLocation_Center)
+            
+            guard
+                let unmanagedConverter = vImageConverter_CreateForCVToCGImageFormat(
+                    cvImageFormat,
+                    &cgImageFormat,
+                    nil,
+                    vImage_Flags(kvImagePrintDiagnosticsToConsole),
+                    &error),
+                error == kvImageNoError else {
+                    print("vImageConverter_CreateForCVToCGImageFormat error:", error)
+                    return
+            }
+            
+            converter = unmanagedConverter.takeRetainedValue()
+        }
+        
+        if sourceBuffers.isEmpty {
+            let numberOfSourceBuffers = Int(vImageConverter_GetNumberOfSourceBuffers(converter!))
+            sourceBuffers = [vImage_Buffer](repeating: vImage_Buffer(),
+                                            count: numberOfSourceBuffers)
+        }
+        
+        error = vImageBuffer_InitForCopyFromCVPixelBuffer(
+            &sourceBuffers,
+            converter!,
+            pixelBuffer,
+            vImage_Flags(kvImageNoAllocate))
+
+        guard error == kvImageNoError else {
+            return
+        }
+        
+        if destinationBuffer.data == nil {
+            error = vImageBuffer_Init(&destinationBuffer,
+                                      UInt(CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)),
+                                      UInt(CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)),
+                                      cgImageFormat.bitsPerPixel,
+                                      vImage_Flags(kvImageNoFlags))
+            
+            guard error == kvImageNoError else {
+                return
+            }
+        }
+        
+        error = vImageConvert_AnyToAny(converter!,
+                                       &sourceBuffers,
+                                       &destinationBuffer,
+                                       nil,
+                                       vImage_Flags(kvImageNoFlags))
+
+        guard error == kvImageNoError else {
+            return
+        }
+        // Boilerplate ends
+        
+        print( destinationBuffer )
+    
+        // Calculate the histogram for the image
+        //vImageHistogramCalculation_ARGB8888(&destinationBuffer, histogram, vImage_Flags(kvImageLeaveAlphaUnchanged))
+
+        guard error == kvImageNoError else {
+            return
+        }
+        
+        
+        // Display the luminance
+        free(destinationBuffer.data)
     }
     
     func showHelp(){
