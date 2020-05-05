@@ -22,6 +22,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         helpButton.isHidden =  !helpButton.isHidden
     }
     
+    // dictionary of characters and their corresponding codes
     var morseCharsDict: [String: String] = [
         "A":".-",
         "B":"-...",
@@ -58,7 +59,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         "7":"--...",
         "8":"---..",
         "9":"----.",
-        "0":"-----"
+        "0":"-----",
+        " ":"       "   // Words are separated by 7
     ]
 
     override func viewDidLoad() {
@@ -127,14 +129,14 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         self.view.addSubview(textInput)
         
         
-        let morseOutput = UITextView(frame: CGRect(x: 20, y: 150, width: 300, height: 40))
+        let morseOutput = UITextView(frame: CGRect(x: 20, y: 150, width: 300, height: 200))
         morseOutput.center = self.view.center
         morseOutput.font = UIFont.systemFont(ofSize: 15)
         morseOutput.textAlignment = NSTextAlignment.left
         morseOutput.layer.borderColor = UIColor.lightGray.cgColor
         morseOutput.layer.borderWidth = 1
         morseOutput.layer.cornerRadius = 6
-        morseOutput.text =
+        morseOutput.text = convertToMorseChars(chars: "Enter your message here")
         self.view.addSubview(morseOutput)
         
         // add an output window showing the converted morse
@@ -185,8 +187,19 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
     }
     
-    func convertToMorseChars(chars: String){
+    func convertToMorseChars(chars: String) -> String {
+        // first we should convert the input to uppercase so that we can use the dictionary
+        var localChars = chars
+        localChars = chars.uppercased()
         
+        // initialize a return variable
+        var result = ""
+        
+        for c in localChars {
+            result += morseCharsDict[ String(c) ] ?? ""
+        }
+        
+        return result
     }
 
 }
