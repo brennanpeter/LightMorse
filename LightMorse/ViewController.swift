@@ -21,6 +21,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     var textInput: UITextField!
     var morseOutput: UITextView!
     var encodeMessage: String!
+    var prettyEncodedMessage: String!
     
     // hiding and showing the main menu
     func toggleButtons(){
@@ -31,42 +32,42 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     // dictionary of characters and their corresponding codes
     var morseCharsDict: [String: String] = [
-        "A":".-",
-        "B":"-...",
-        "C":"-.-.",
-        "D":"-..",
-        "E":".",
-        "F":"..-.",
-        "G":"--.",
-        "H":"....",
-        "I":"..",
-        "J":".---",
-        "K":"-.-",
-        "L":".-..",
-        "M":"--",
-        "N":"-.",
-        "O":"---",
-        "P":".--.",
-        "Q":"--.-",
-        "R":".-.",
-        "S":"...",
-        "T":"-",
-        "U":"..-",
-        "V":"...-",
-        "W":".--",
-        "X":"-..-",
-        "Y":"-.--",
-        "Z":"--..",
-        "1":".----",
-        "2":"..---",
-        "3":"...--",
-        "4":"....-",
-        "5":".....",
-        "6":"-....",
-        "7":"--...",
-        "8":"---..",
-        "9":"----.",
-        "0":"-----"
+        "A":".-|",
+        "B":"-...|",
+        "C":"-.-.|",
+        "D":"-..|",
+        "E":".|",
+        "F":"..-.|",
+        "G":"--.|",
+        "H":"....|",
+        "I":"..|",
+        "J":".---|",
+        "K":"-.-|",
+        "L":".-..|",
+        "M":"--|",
+        "N":"-.|",
+        "O":"---|",
+        "P":".--.|",
+        "Q":"--.-|",
+        "R":".-.|",
+        "S":"...|",
+        "T":"-|",
+        "U":"..-|",
+        "V":"...-|",
+        "W":".--|",
+        "X":"-..-|",
+        "Y":"-.--|",
+        "Z":"--..|",
+        "1":".----|",
+        "2":"..---|",
+        "3":"...--|",
+        "4":"....-|",
+        "5":".....|",
+        "6":"-....|",
+        "7":"--...|",
+        "8":"---..|",
+        "9":"----.|",
+        "0":"-----|"
     ]
 
     override func viewDidLoad() {
@@ -149,23 +150,77 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         morseOutput.layer.borderColor = UIColor.lightGray.cgColor
         morseOutput.layer.borderWidth = 1
         morseOutput.layer.cornerRadius = 6
-        morseOutput.text = convertToMorseChars(chars: textInput.text!)
+        morseOutput.text = ""
+        morseOutput.isEditable = false
         self.view.addSubview(morseOutput)
         
         // add an output window showing the converted morse
         // add a button to start encoding
-        helpButton = UIButton(frame: CGRect(x: 100, y: 320, width: 200, height: 100))
-        helpButton.backgroundColor = .red
-        helpButton.layer.cornerRadius = 6
-        helpButton.setTitle("Help", for: .normal)
-        helpButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
-        self.view.addSubview(helpButton)
-        toggleTorch(on: true)
+        let sendButton = UIButton(frame: CGRect(x: 100, y: 420, width: 200, height: 100))
+        sendButton.backgroundColor = .purple
+        sendButton.layer.cornerRadius = 6
+        sendButton.setTitle("Send", for: .normal)
+        sendButton.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
+        self.view.addSubview(sendButton)
+        
     }
     
     @objc func textFieldDidChange (sender: UITextField) {
         encodeMessage = convertToMorseChars(chars: sender.text!)
-        morseOutput.text = encodeMessage
+        
+        morseOutput.text = encodeMessage.replacingOccurrences(of: "|", with: "")
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        self.view.endEditing(true)
+        return false
+    }
+    
+    @objc func sendMessage (sender: UIButton) {
+        print("Sending")
+        
+        for c in encodeMessage {
+            switch c {
+            case ".":
+                print(".")
+                // turn on the torch
+                toggleTorch(on: true)
+                // wait 1 unit
+                // turn off the torch
+                toggleTorch(on: false)
+                // wait 1 unit
+            case "-":
+                print("-")
+                // turn on the torch
+                toggleTorch(on: true)
+                // wait 3 units
+                // turn off the torch
+                toggleTorch(on: false)
+                // wait 1 unit
+            case "|":
+                print("|")
+                // wait for 2 extra units
+                // to get the 3 unit wait time at the end of a letter
+            case " ":
+                print("Space")
+                // wait for 4 extra units
+                // we will have just finished a letter so we only need to wait for an additional 4 units
+            default:
+                print("Unexpected Character in Morse String")
+                
+            }
+            // decide to toggle the flashLight on
+            
+            
+            // classify the amount of time we should wait
+            
+            
+            // if the torch is on turn it off
+            
+            
+            
+        }
+
     }
     
     func decodeMorse(){
