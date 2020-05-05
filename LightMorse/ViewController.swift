@@ -10,18 +10,19 @@ import UIKit
 import AVKit
 
 class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, UITextFieldDelegate {
-    
+    // main menu
     var decodeButton: UIButton!
     var encodeButton: UIButton!
     var helpButton: UIButton!
     var backButton: UIButton!
+    var sendButton: UIButton!
     
-    
+    // encode page
     var textInput: UITextField!
     var morseOutput: UITextView!
     var encodeMessage: String!
     
-    
+    // hiding and showing the main menu
     func toggleButtons(){
         decodeButton.isHidden =  !decodeButton.isHidden
         encodeButton.isHidden =  !encodeButton.isHidden
@@ -72,6 +73,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
+        // Display the main menu options
+        
         // I made the buttons on the screen by modifying the method show here
         // https://stackoverflow.com/questions/24030348/how-to-create-a-button-programmatically
         decodeButton = UIButton(frame: CGRect(x: 100, y: 100, width: 200, height: 100))
@@ -79,7 +82,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         decodeButton.layer.cornerRadius = 6
         decodeButton.setTitle("Decode", for: .normal)
         decodeButton.addTarget(self, action: #selector(decodeButtonAction), for: .touchUpInside)
-
         self.view.addSubview(decodeButton)
         
         encodeButton = UIButton(frame: CGRect(x: 100, y: 210, width: 200, height: 100))
@@ -87,7 +89,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         encodeButton.layer.cornerRadius = 6
         encodeButton.setTitle("Encode", for: .normal)
         encodeButton.addTarget(self, action: #selector(encodeButtonAction), for: .touchUpInside)
-
         self.view.addSubview(encodeButton)
         
         helpButton = UIButton(frame: CGRect(x: 100, y: 320, width: 200, height: 100))
@@ -95,7 +96,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         helpButton.layer.cornerRadius = 6
         helpButton.setTitle("Help", for: .normal)
         helpButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
-
         self.view.addSubview(helpButton)
     }
     
@@ -118,26 +118,33 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func encodeMorse(){
+        let inputLabel = UILabel(frame: CGRect(x: 10, y: 10, width: 100, height: 50))
+        inputLabel.text = "Input"
+        self.view.addSubview(inputLabel)
+        
         // add a text box programatically
         //https://stackoverflow.com/questions/24710041/adding-uitextfield-on-uiview-programmatically-swift/32602425
-        textInput = UITextField(frame: CGRect(x: 20, y: 100, width: 300, height: 200))
+        textInput = UITextField(frame: CGRect(x: 50, y: 50, width: 300, height: 50))
         textInput.placeholder = "Enter your message here"
-        textInput.font = UIFont.systemFont(ofSize: 15)
+        textInput.font = UIFont.systemFont(ofSize: 18)
         textInput.borderStyle = UITextField.BorderStyle.roundedRect
         textInput.layer.borderColor = UIColor.black.cgColor
         textInput.autocorrectionType = UITextAutocorrectionType.no
         textInput.keyboardType = UIKeyboardType.default
         textInput.returnKeyType = UIReturnKeyType.done
         textInput.clearButtonMode = UITextField.ViewMode.whileEditing
-        textInput.contentVerticalAlignment = UIControl.ContentVerticalAlignment.center
+        textInput.contentVerticalAlignment = UIControl.ContentVerticalAlignment.top
         textInput.delegate = self
         textInput.addTarget(self, action: #selector(textFieldDidChange), for: UIControl.Event.editingChanged)
         self.view.addSubview(textInput)
         
+        let outputLabel = UILabel(frame: CGRect(x: 10, y: 270, width: 100, height: 50))
+        outputLabel.text = "Output"
+        self.view.addSubview(outputLabel)
         
-        morseOutput = UITextView(frame: CGRect(x: 20, y: 500, width: 300, height: 200))
-        morseOutput.center = self.view.center
-        morseOutput.font = UIFont.systemFont(ofSize: 15)
+        
+        morseOutput = UITextView(frame: CGRect(x: 50, y: 120, width: 300, height: 200))
+        morseOutput.font = UIFont.systemFont(ofSize: 18)
         morseOutput.textAlignment = NSTextAlignment.left
         morseOutput.layer.borderColor = UIColor.lightGray.cgColor
         morseOutput.layer.borderWidth = 1
@@ -147,7 +154,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         // add an output window showing the converted morse
         // add a button to start encoding
-        
+        helpButton = UIButton(frame: CGRect(x: 100, y: 320, width: 200, height: 100))
+        helpButton.backgroundColor = .red
+        helpButton.layer.cornerRadius = 6
+        helpButton.setTitle("Help", for: .normal)
+        helpButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
+        self.view.addSubview(helpButton)
+        toggleTorch(on: true)
     }
     
     @objc func textFieldDidChange (sender: UITextField) {
@@ -159,7 +172,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         // To learn about making a live AVcapture seesion I watched the tutorial at:
         // https://www.youtube.com/watch?v=p6GA8ODlnX0
         
-        // Set up for the camera
+        // Set up for the camera     Lots of boilerplate :(
         let captureSession = AVCaptureSession()
         
         guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
@@ -217,6 +230,31 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         }
         
         return result
+    }
+    
+    // This is the boilerplate checks for seeing if the torch can be used
+    // Only 1 app can use the torch at 1 time and some devices
+    // don't have torches so we need to check for those as well
+    func toggleTorch(on: Bool) {
+        guard let device = AVCaptureDevice.default(for: .video) else { return }
+
+        if device.hasTorch {
+            do {
+                try device.lockForConfiguration()
+
+                if on == true {
+                    device.torchMode = .on
+                } else {
+                    device.torchMode = .off
+                }
+
+                device.unlockForConfiguration()
+            } catch {
+                print("Torch could not be used")
+            }
+        } else {
+            print("Torch is not available")
+        }
     }
     
 }
