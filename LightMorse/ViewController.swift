@@ -302,9 +302,20 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func calculateLuminance(pixelBuffer: CVImageBuffer){
         print("calculate luminance")
         
+        // Use CoreImage to calculate the histogram for the image
         
-        // Display the luminance
-        free(destinationBuffer.data)
+        print(pixelBuffer)
+        
+        let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0)
+        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        let byteBuffer = baseAddress?.assumingMemoryBound(to: UInt32.self)
+
+        // Get luma value for pixel (43, 17)
+        let luma = ((byteBuffer?[17 * bytesPerRow + 43])!) & 0b11111111
+        
+        print(luma)
+        
+        
     }
     
     func showHelp(){
