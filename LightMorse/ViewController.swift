@@ -120,7 +120,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func encodeMorse(){
         // add a text box programatically
         //https://stackoverflow.com/questions/24710041/adding-uitextfield-on-uiview-programmatically-swift/32602425
-        textInput = UITextField(frame: CGRect(x: 20, y: 100, width: 200, height: 40))
+        textInput = UITextField(frame: CGRect(x: 20, y: 100, width: 300, height: 200))
         textInput.placeholder = "Enter your message here"
         textInput.font = UIFont.systemFont(ofSize: 15)
         textInput.borderStyle = UITextField.BorderStyle.roundedRect
@@ -135,7 +135,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         self.view.addSubview(textInput)
         
         
-        morseOutput = UITextView(frame: CGRect(x: 20, y: 150, width: 300, height: 200))
+        morseOutput = UITextView(frame: CGRect(x: 20, y: 500, width: 300, height: 200))
         morseOutput.center = self.view.center
         morseOutput.font = UIFont.systemFont(ofSize: 15)
         morseOutput.textAlignment = NSTextAlignment.left
