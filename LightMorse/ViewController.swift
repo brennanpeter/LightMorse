@@ -351,6 +351,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         dataOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "video queue"))
         captureSession.addOutput(dataOutput)
         
+        
         // Add a button to close the cpature window and bring us back to the main menu
         backButton = UIButton(frame: CGRect(x: 10, y: 10, width: 50, height: 50))
         backButton.backgroundColor = .red
@@ -452,17 +453,21 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             triggerOff()
         }
         
-        if (offTimerDuration > 40){
+        // Handle the spaces and end of transmission
+        if (offTimerDuration > 45){
+            print("Detected Space")
             popMorseStack()
             currentMessage += " "
             print("Message: " + currentMessage)
+            
+            offTimerDuration = 0
             
             // We have to do UI updates Async like this
             DispatchQueue.main.async {
                 self.decodeOutput.text = self.currentMessage
             }
             
-            offTimerDuration = 0
+            
         }
  
         totalPreviousLuma = totatLuma
@@ -480,12 +485,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             currentMessage += currentLetter
             print("Message: " + currentMessage)
             
+            currentMorse = ""   // empty current morse so it can find the next character
             // We have to do UI updates Async like this
             DispatchQueue.main.async {
                 self.decodeOutput.text = self.currentMessage
             }
             
-            currentMorse = ""   // empty current morse so it can find the next character
+            
         }
         else {
             currentMorse = ""
@@ -510,23 +516,25 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func triggerOn(){
         self.decodeDetectsFlash = true
         
+        print("On")
+        print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
+        
         // check off phase timer
         // if off phase timer does not exist -> ignore it
  
         if offTimerDuration != 0 {
             
-            // else we must check for the 3 cases of why our light would be off:
+            // else we must check for the other 2 cases of why our light would be off:
             
             // else if the torch has been off from about 2 < duration < 4 units we
             // know the current letter is over so we search the dictionary, print the character
             // and wait for a new letter
-            if(offTimerDuration >= 20 && offTimerDuration <= 40) {
+            if(offTimerDuration >= 22 && offTimerDuration <= 45) {
                 popMorseStack()
             }
 
             // else if the torch was only off for less than 2 duration units, we know we are
             // still working on the current letter so dont do anything
-            
             // becuase the torch is on we disable the offTimer
             offTimerDuration = 0
             
@@ -535,16 +543,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     @objc func fireTimer(){
         if (self.decodeDetectsFlash == true){
-            self.onTimerDuration += 1
+            self.onTimerDuration += 1     // our timer steps  times a duration
         }
         else {
             self.offTimerDuration += 1
         }
-        if ((onTimerDuration % 10 == 0 && onTimerDuration != 0 ) ||
-            offTimerDuration % 10 == 0 && offTimerDuration != 0){
-            //print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
-        }
-        //print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
+        
+        print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
         
     }
     
@@ -555,7 +560,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     */
     func triggerOff(){
         self.decodeDetectsFlash = false
-    
+        
         if onTimerDuration != 0 {
             
             // if the most recent off state was more than 2 durations ago,
@@ -570,7 +575,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
                 print("Detected: .")
                 print("CurrentMorse: " + currentMorse)
             }
-            
+
             // invalidate the on timer becuase the torch is now off
             onTimerDuration = 0
             
