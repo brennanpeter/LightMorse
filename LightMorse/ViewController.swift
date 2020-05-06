@@ -29,6 +29,15 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     var totalPreviousLuma = 0
     
+    var onTimer: Timer!
+    var offTimer: Timer!
+    
+    var onTimerDuration: Int!
+    var offTimerDuration: Int!
+    
+    var currentLetter: String!
+    var currentMorse: String!
+    
     // hiding and showing the main menu
     func toggleButtons(){
         decodeButton.isHidden =  !decodeButton.isHidden
@@ -37,7 +46,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     // dictionary of characters and their corresponding codes
-    var morseCharsDict: [String: String] = [
+    var charsToMorseDict: [String: String] = [
         "A":".-|",
         "B":"-...|",
         "C":"-.-.|",
@@ -75,7 +84,45 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         "9":"----.|",
         "0":"-----|"
     ]
-    
+    // dictionary of characters and their corresponding codes
+       var morseToCharsDict: [String: String] = [
+        ".-":"A",
+        "-...":"B",
+        "-.-.":"C",
+        "-..":"D",
+        ".":"E",
+        "..-.":"F",
+        "--.":"G",
+        "....":"H",
+        "..":"I",
+        ".---":"J",
+        "-.-":"K",
+        ".-..":"L",
+        "--":"M",
+        "-.":"N",
+        "---":"O",
+        ".--.":"P",
+        "--.-":"Q",
+        ".-.":"R",
+        "...":"S",
+        "-":"T",
+        "..-":"U",
+        "...-":"V",
+        ".--":"W",
+        "-..-":"X",
+        "-.--":"Y",
+        "--..":"Z",
+        ".----|":"1",
+        "..---|":"2",
+        "...--|":"3",
+        "....-|":"4",
+        ".....|":"5",
+        "-....|":"6",
+        "--...|":"7",
+        "---..|":"8",
+        "----.|":"9",
+        "-----|":"0"
+       ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -328,17 +375,98 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         if (totatLuma - totalPreviousLuma > 100000){
             print("ON")
+            triggerOn()
         }
         else if(totatLuma - totalPreviousLuma < -100000){
             print("OFF")
+            triggerOff()
         }
-        
-        //print(totatLuma)
-        
+ 
         totalPreviousLuma = totatLuma
         
-        //let luma = ((byteBuffer?[17 * bytesPerRow + 43])!) & 0b11111111
+    }
+    
+    // *******         the real meat and potatos of the program          ********
+    
+    /*
+     called whenever we detect the flashlight turning on
+     this is where we start the on phase and more importantly
+     this is where we address the most recent off phase
+    */
+    func triggerOn(){
+        // Check to see if we have already detected an on state recently and if so ignore this one
         
+        // start on phase timer
+        onTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOnTimer), userInfo: nil, repeats: true)
+        
+        // check off phase timer
+        // if off phase timer does not exist -> ignore it
+        if offTimer != nil {
+            
+            // else we must check for the 3 cases of why our light would be off:
+            if (offTimerDuration >= 6){
+                // if the torch has been off for more than 7 duration units we append a space to the result
+                
+            }
+            else if(offTimerDuration >= 2 && offTimerDuration <= 4) {
+                // else if the torch has been off from about 2 < duration < 4 units we
+                // know the current letter is over so we search the dictionary, print the character
+                // and wait for a new letter
+                
+                currentLetter = morseToCharsDict[currentMorse]
+                
+            }
+
+            // else if the torch was only off for less than 2 duration units, we know we are
+            // still working on the current letter so dont do anything
+            
+            // becuase the torch is on we disable the offTimer
+            offTimer.invalidate()
+            offTimerDuration = 0
+            
+        }
+    }
+    
+    @objc func fireOnTimer(){
+        self.onTimerDuration += 1
+        print("On Timer fired!")
+    }
+    
+    /*
+     called whenever we detect the flashlight turning off
+     this is where we start the off phase and more importantly
+     this is where we check the length of the most recent on phase
+    */
+    func triggerOff(){
+        // Check to see if we have already detected an off state recently
+        //  (within 1 duration) and if so ignore this one
+        
+        // start off timer
+        offTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOffTimer), userInfo: nil, repeats: true)
+        
+        if onTimer != nil {
+            
+            // if the most recent off state was more than 2 durations ago,
+            // then we add a dash to the current character stack
+            if (onTimerDuration >= 2) {
+                currentMorse += "-"
+            }
+            // else add a dot
+            else {
+                currentMorse += "."
+            }
+            
+            // invalidate the on timer becuase the torch is now off
+            onTimer.invalidate()
+            onTimerDuration = 0
+            
+        }
+        
+    }
+    
+    @objc func fireOffTimer(){
+        self.offTimerDuration += 1
+        print("Off Timer fired!")
     }
     
     func showHelp(){
@@ -358,7 +486,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
                 result = result + " "
             }
             else {
-                result = result + (morseCharsDict[ String(c) ] ?? "")
+                result = result + (charsToMorseDict[ String(c) ] ?? "")
             }
             
         }
@@ -392,4 +520,3 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
 }
-
