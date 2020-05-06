@@ -128,9 +128,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
-        
-        let timer = Timer(timeInterval: 0.4, repeats: true) { _ in print("Done!") }
-        
         // Initializing some variables for the decode process
         onTimerDuration = 0
         offTimerDuration = 0
@@ -169,7 +166,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         toggleButtons()
         decodeMorse()
     }
-    
+     
     @objc func encodeButtonAction(sender: UIButton!) {
         print("Encode Button tapped")
         toggleButtons()
@@ -412,6 +409,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         // start on phase timer
         onTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOnTimer), userInfo: nil, repeats: true)
+        RunLoop.current.add(onTimer, forMode: .common)
         
         // check off phase timer
         // if off phase timer does not exist -> ignore it
@@ -467,6 +465,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         // start off timer
         offTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOffTimer), userInfo: nil, repeats: true)
+        RunLoop.current.add(offTimer, forMode: .common)
         
         if onTimer != nil {
             
