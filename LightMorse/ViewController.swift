@@ -445,7 +445,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         }
         
         // Handle the spaces and end of transmission
-        if (offTimerDuration > 40){
+        if (offTimerDuration > 45){
             print("Detected Space")
             popMorseStack()
             currentMessage += " "
@@ -507,10 +507,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func triggerOn(){
         self.decodeDetectsFlash = true
         
-        if (onTimerDuration < 25){
-            return
-        }
-        
         print("On")
         print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
         
@@ -524,13 +520,12 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             // else if the torch has been off from about 2 < duration < 4 units we
             // know the current letter is over so we search the dictionary, print the character
             // and wait for a new letter
-            if(offTimerDuration >= 20 && offTimerDuration <= 40) {
+            if(offTimerDuration >= 20 && offTimerDuration <= 45) {
                 popMorseStack()
             }
 
             // else if the torch was only off for less than 2 duration units, we know we are
             // still working on the current letter so dont do anything
-            
             // becuase the torch is on we disable the offTimer
             offTimerDuration = 0
             
@@ -561,7 +556,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             
             // if the most recent off state was more than 2 durations ago,
             // then we add a dash to the current character stack
-            if (onTimerDuration >= 20) {
+            if (onTimerDuration >= 15) {
                 currentMorse += "-"
                 print("Detected: -")
             }
@@ -571,7 +566,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
                 print("Detected: .")
                 print("CurrentMorse: " + currentMorse)
             }
-            
+
             // invalidate the on timer becuase the torch is now off
             onTimerDuration = 0
             
