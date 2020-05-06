@@ -29,14 +29,16 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     var totalPreviousLuma = 0
     
-    var onTimer: Timer!
-    var offTimer: Timer!
+    var timer: Timer!
     
     var onTimerDuration: Int!
     var offTimerDuration: Int!
     
     var currentLetter: String!
     var currentMorse: String!
+    var currentMessage: String!
+    
+    var decodeDetectsFlash: Bool!
     
     // hiding and showing the main menu
     func toggleButtons(){
@@ -127,6 +129,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        
+        
         
         // Initializing some variables for the decode process
         onTimerDuration = 0
@@ -288,6 +292,14 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func decodeMorse(){
+        
+        self.decodeDetectsFlash = false
+        self.currentMessage = ""
+        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
+        RunLoop.current.add(timer, forMode: .common)
+        
+        
+        
         // To learn about making a live AVcapture seesion I watched the tutorial at:
         // https://www.youtube.com/watch?v=p6GA8ODlnX0
         
@@ -381,16 +393,44 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         }
         
         if (totatLuma - totalPreviousLuma > 100000){
-            print("ON")
+            //print("ON")
             triggerOn()
         }
         else if(totatLuma - totalPreviousLuma < -100000){
-            print("OFF")
+            //print("OFF")
             triggerOff()
+        }
+        
+        if (offTimerDuration > 40){
+            popMorseStack()
+            currentMessage += " "
+            print("Message: " + currentMessage)
+            offTimerDuration = 0
         }
  
         totalPreviousLuma = totatLuma
         
+    }
+    
+    func popMorseStack(){
+        print("Letter end")
+        // else if the torch has been off from about 2 < duration < 4 units we
+        // know the current letter is over so we search the dictionary, print the character
+        // and wait for a new letter
+        if (morseToCharsDict.keys.contains(currentMorse)){
+            currentLetter = morseToCharsDict[currentMorse]
+            print("Letter is: " + currentLetter)
+            currentMessage += currentLetter
+            print("Message: " + currentMessage)
+            currentMorse = ""   // empty current morse so it can find the next character
+        }
+        else {
+            currentMorse = ""
+            currentLetter = "?"
+            currentMessage += currentLetter
+            print("Letter is: " + currentLetter)
+            print("Message: " + currentMessage)
+        }
     }
     
     // *******         the real meat and potatos of the program          ********
@@ -401,54 +441,44 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
      this is where we address the most recent off phase
     */
     func triggerOn(){
-        // Check to see if we have already detected an on state recently and if so ignore this one
-        if (onTimerDuration < 1 && onTimer != nil){
-            print("ON:  Ignore")
-            return
-        }
-        
-        // start on phase timer
-        onTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOnTimer), userInfo: nil, repeats: true)
-        RunLoop.current.add(onTimer, forMode: .common)
+        self.decodeDetectsFlash = true
         
         // check off phase timer
         // if off phase timer does not exist -> ignore it
-        if offTimer != nil {
+ 
+        if offTimerDuration != 0 {
             
             // else we must check for the 3 cases of why our light would be off:
-            if (offTimerDuration >= 6){
-                // if the torch has been off for more than 7 duration units we append a space to the result
-                print("ON:  Ignore")
-            }
-            else if(offTimerDuration >= 2 && offTimerDuration <= 4) {
-                // else if the torch has been off from about 2 < duration < 4 units we
-                // know the current letter is over so we search the dictionary, print the character
-                // and wait for a new letter
-                if (morseToCharsDict.keys.contains(currentMorse)){
-                    currentLetter = morseToCharsDict[currentMorse]
-                    print("Letter is: " + currentLetter)
-                }
-                else {
-                    currentMorse = ""
-                    currentLetter = "?"
-                    print("Letter is: " + currentLetter)
-                }
-                
+            
+            // else if the torch has been off from about 2 < duration < 4 units we
+            // know the current letter is over so we search the dictionary, print the character
+            // and wait for a new letter
+            if(offTimerDuration >= 20 && offTimerDuration <= 40) {
+                popMorseStack()
             }
 
             // else if the torch was only off for less than 2 duration units, we know we are
             // still working on the current letter so dont do anything
             
             // becuase the torch is on we disable the offTimer
-            offTimer.invalidate()
             offTimerDuration = 0
             
         }
     }
     
-    @objc func fireOnTimer(){
-        self.onTimerDuration += 1
-        print("On Timer fired!")
+    @objc func fireTimer(){
+        if (self.decodeDetectsFlash == true){
+            self.onTimerDuration += 1
+        }
+        else {
+            self.offTimerDuration += 1
+        }
+        if ((onTimerDuration % 10 == 0 && onTimerDuration != 0 ) ||
+            offTimerDuration % 10 == 0 && offTimerDuration != 0){
+            //print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
+        }
+        //print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
+        
     }
     
     /*
@@ -457,21 +487,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
      this is where we check the length of the most recent on phase
     */
     func triggerOff(){
-        // Check to see if we have already detected an off state recently
-        //  (within 1 duration) and if so ignore this one
-        if (offTimerDuration < 1 && offTimer != nil){
-            return
-        }
-        
-        // start off timer
-        offTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOffTimer), userInfo: nil, repeats: true)
-        RunLoop.current.add(offTimer, forMode: .common)
-        
-        if onTimer != nil {
+        self.decodeDetectsFlash = false
+    
+        if onTimerDuration != 0 {
             
             // if the most recent off state was more than 2 durations ago,
             // then we add a dash to the current character stack
-            if (onTimerDuration >= 2) {
+            if (onTimerDuration >= 15) {
                 currentMorse += "-"
                 print("Detected: -")
             }
@@ -479,19 +501,14 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             else {
                 currentMorse += "."
                 print("Detected: .")
+                print("CurrentMorse: " + currentMorse)
             }
             
             // invalidate the on timer becuase the torch is now off
-            onTimer.invalidate()
             onTimerDuration = 0
             
         }
         
-    }
-    
-    @objc func fireOffTimer(){
-        self.offTimerDuration += 1
-        print("Off Timer fired!")
     }
     
     func showHelp(){
