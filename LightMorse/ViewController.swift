@@ -273,7 +273,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     @objc func sendMessage (sender: UIButton) {
         print("Sending")
         
-        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 0.01, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
         
         for c in encodeMessage {
             switch c {
@@ -321,7 +321,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         self.decodeDetectsFlash = false
         self.currentMessage = ""
-        timer = Timer.scheduledTimer(timeInterval: 0.01, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
         RunLoop.current.add(timer, forMode: .common)
         
         // To learn about making a live AVcapture seesion I watched the tutorial at:
@@ -452,7 +452,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         }
         
         // Handle the spaces and end of transmission
-        if (offTimerDuration > 200){
+        if (offTimerDuration > 150){
             print("Detected Space")
             popMorseStack()
             currentMessage += " "
@@ -510,6 +510,11 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     */
     func triggerOn(){
         self.decodeDetectsFlash = true
+        
+        if (onTimerDuration < 25){
+            return
+        }
+        
         print("On")
         print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
         
@@ -523,7 +528,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             // else if the torch has been off from about 2 < duration < 4 units we
             // know the current letter is over so we search the dictionary, print the character
             // and wait for a new letter
-            if(offTimerDuration >= 20 && offTimerDuration <= 40) {
+            if(offTimerDuration >= 50 && offTimerDuration <= 100) {
                 popMorseStack()
             }
 
@@ -538,16 +543,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     @objc func fireTimer(){
         if (self.decodeDetectsFlash == true){
-            self.onTimerDuration += 1
+            self.onTimerDuration += 5     // our timer steps  times a duration
         }
         else {
-            self.offTimerDuration += 1
+            self.offTimerDuration += 5
         }
-        if ((onTimerDuration % 10 == 0 && onTimerDuration != 0 ) ||
-            offTimerDuration % 10 == 0 && offTimerDuration != 0){
-            //print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
-        }
-        //print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
+        
+        print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
         
     }
     
@@ -559,6 +561,10 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func triggerOff(){
         self.decodeDetectsFlash = false
         
+        if (offTimerDuration < 25){
+            return
+        }
+        
         print("Off")
         print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
     
@@ -566,7 +572,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             
             // if the most recent off state was more than 2 durations ago,
             // then we add a dash to the current character stack
-            if (onTimerDuration >= 10) {
+            if (onTimerDuration >= 50) {
                 currentMorse += "-"
                 print("Detected: -")
             }
