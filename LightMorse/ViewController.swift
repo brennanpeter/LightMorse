@@ -520,7 +520,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             // else if the torch has been off from about 2 < duration < 4 units we
             // know the current letter is over so we search the dictionary, print the character
             // and wait for a new letter
-            if(offTimerDuration >= 20 && offTimerDuration <= 45) {
+            if(offTimerDuration >= 22 && offTimerDuration <= 45) {
                 popMorseStack()
             }
 
