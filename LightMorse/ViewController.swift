@@ -26,6 +26,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     var prettyEncodedMessage: String!
     
     var captureSession: AVCaptureSession!
+    var decodeOutput: UITextView!
     
     let duration = UInt32(250000)    // length of a 1 morse unit in milliseconds
     
@@ -49,7 +50,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func toggleButtons(){
         decodeButton.isHidden =  !decodeButton.isHidden
         encodeButton.isHidden =  !encodeButton.isHidden
-        helpButton.isHidden =  !helpButton.isHidden
     }
     
     func toggleEncodeView() {
@@ -165,13 +165,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         encodeButton.setTitle("Encode", for: .normal)
         encodeButton.addTarget(self, action: #selector(encodeButtonAction), for: .touchUpInside)
         self.view.addSubview(encodeButton)
-        
-        helpButton = UIButton(frame: CGRect(x: 100, y: 320, width: 200, height: 100))
-        helpButton.backgroundColor = .red
-        helpButton.layer.cornerRadius = 6
-        helpButton.setTitle("Help", for: .normal)
-        helpButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
-        self.view.addSubview(helpButton)
         
     }
     
@@ -356,7 +349,15 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         backButton.setTitle("Back", for: .normal)
         backButton.addTarget(self, action: #selector(decodeBack), for: .touchUpInside)
         
-        
+        decodeOutput = UITextView(frame: CGRect(x: 100, y: 10, width: 200, height: 60))
+        decodeOutput.font = UIFont.systemFont(ofSize: 18)
+        decodeOutput.textAlignment = NSTextAlignment.left
+        decodeOutput.layer.borderColor = UIColor.lightGray.cgColor
+        decodeOutput.layer.borderWidth = 1
+        decodeOutput.layer.cornerRadius = 6
+        decodeOutput.text = ""
+        decodeOutput.isEditable = false
+        decodeView.addSubview(decodeOutput)
 
         decodeView.addSubview(backButton)
         
@@ -367,6 +368,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     @objc func decodeBack (sender: UIButton) {
         // hide the content on the encode page
         captureSession.stopRunning()
+        currentMessage = ""     // delete the current message content
         toggleDecodeView()
         toggleButtons()
     }
@@ -445,6 +447,12 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             popMorseStack()
             currentMessage += " "
             print("Message: " + currentMessage)
+            
+            // We have to do UI updates Async like this
+            DispatchQueue.main.async {
+                self.decodeOutput.text = self.currentMessage
+            }
+            
             offTimerDuration = 0
         }
  
@@ -462,6 +470,12 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             print("Letter is: " + currentLetter)
             currentMessage += currentLetter
             print("Message: " + currentMessage)
+            
+            // We have to do UI updates Async like this
+            DispatchQueue.main.async {
+                self.decodeOutput.text = self.currentMessage
+            }
+            
             currentMorse = ""   // empty current morse so it can find the next character
         }
         else {
@@ -470,6 +484,10 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             currentMessage += currentLetter
             print("Letter is: " + currentLetter)
             print("Message: " + currentMessage)
+            DispatchQueue.main.async {
+                self.decodeOutput.text = self.currentMessage
+            }
+
         }
     }
     
