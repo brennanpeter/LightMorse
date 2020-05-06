@@ -24,6 +24,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     var morseOutput: UITextView!
     var encodeMessage: String!
     var prettyEncodedMessage: String!
+    var breakFromSend: Bool!
     
     var captureSession: AVCaptureSession!
     var decodeOutput: UITextView!
@@ -149,6 +150,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         currentMorse = ""
         currentLetter = ""
         
+        breakFromSend = false
+        
         // Display the main menu options
         // I made the buttons on the screen by modifying the method show here
         // https://stackoverflow.com/questions/24030348/how-to-create-a-button-programmatically
@@ -246,6 +249,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     @objc func encodeBack (sender: UIButton) {
         // hide the content on the encode page
+        print("Clicked back. Break boolean: " + String(breakFromSend))
+        self.breakFromSend = true
         toggleEncodeView()
         toggleButtons()
     }
@@ -310,6 +315,10 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
                 
             }
             
+            if (breakFromSend == true){
+                breakFromSend = false
+                break
+            }
         }
     }
     
