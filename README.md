@@ -25,7 +25,7 @@ The only downside to using the iPad is it doesn't have a torch so feel like I'm 
 
 # Running the App
 
-Then the user on the encode side should click the encode button on the main menu. Then they should type up a message they want to send.
+The user on the encode side should click the encode button on the main menu. Then they should type up a message they want to send.
 When they click the send button on the encode page, the app will flash the torch on the device to send the message.
 The person on the decode side should point their camera at the encoding phone and press the decode button on the main menu.
 The app will Immidiately start decoding incoming flashes so it might missclassify the first letter if you started decoding late. 
