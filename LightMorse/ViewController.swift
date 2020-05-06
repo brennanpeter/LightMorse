@@ -128,8 +128,16 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
-        // Display the main menu options
         
+        let timer = Timer(timeInterval: 0.4, repeats: true) { _ in print("Done!") }
+        
+        // Initializing some variables for the decode process
+        onTimerDuration = 0
+        offTimerDuration = 0
+        currentMorse = ""
+        currentLetter = ""
+        
+        // Display the main menu options
         // I made the buttons on the screen by modifying the method show here
         // https://stackoverflow.com/questions/24030348/how-to-create-a-button-programmatically
         decodeButton = UIButton(frame: CGRect(x: 100, y: 100, width: 200, height: 100))
@@ -152,6 +160,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         helpButton.setTitle("Help", for: .normal)
         helpButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
         self.view.addSubview(helpButton)
+        
+        
     }
     
     @objc func decodeButtonAction(sender: UIButton!) {
@@ -395,6 +405,10 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     */
     func triggerOn(){
         // Check to see if we have already detected an on state recently and if so ignore this one
+        if (onTimerDuration < 1 && onTimer != nil){
+            print("ON:  Ignore")
+            return
+        }
         
         // start on phase timer
         onTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOnTimer), userInfo: nil, repeats: true)
@@ -406,14 +420,21 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             // else we must check for the 3 cases of why our light would be off:
             if (offTimerDuration >= 6){
                 // if the torch has been off for more than 7 duration units we append a space to the result
-                
+                print("ON:  Ignore")
             }
             else if(offTimerDuration >= 2 && offTimerDuration <= 4) {
                 // else if the torch has been off from about 2 < duration < 4 units we
                 // know the current letter is over so we search the dictionary, print the character
                 // and wait for a new letter
-                
-                currentLetter = morseToCharsDict[currentMorse]
+                if (morseToCharsDict.keys.contains(currentMorse)){
+                    currentLetter = morseToCharsDict[currentMorse]
+                    print("Letter is: " + currentLetter)
+                }
+                else {
+                    currentMorse = ""
+                    currentLetter = "?"
+                    print("Letter is: " + currentLetter)
+                }
                 
             }
 
@@ -440,6 +461,9 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func triggerOff(){
         // Check to see if we have already detected an off state recently
         //  (within 1 duration) and if so ignore this one
+        if (offTimerDuration < 1 && offTimer != nil){
+            return
+        }
         
         // start off timer
         offTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(fireOffTimer), userInfo: nil, repeats: true)
@@ -450,10 +474,12 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             // then we add a dash to the current character stack
             if (onTimerDuration >= 2) {
                 currentMorse += "-"
+                print("Detected: -")
             }
             // else add a dot
             else {
                 currentMorse += "."
+                print("Detected: .")
             }
             
             // invalidate the on timer becuase the torch is now off
