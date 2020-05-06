@@ -12,16 +12,18 @@ International Morse code has the following 5 rules:
 4.  The space between letters is three units
 5.  The space between words in seven units
 
+I was feeling very confident, perhaps even cocky, about the well this was working until I relocated my self to another room in the house. It seems like it works great sometimes and othertimes not so well. 
+
 The App currently scans each frame and totals up a luminance value and compares the current luminance to the luminance of the previous frame.
 Then if we detect a sudden increase in luminance we assume the flash turned on and vice versa if the luminance suddenly drops
 
-Becuase I really didn't want to try that hard on this assignment (lol) I didn't make a machine learning model to detect the flashes
+This actually performed pretty well if the person on the decode side is in a dark room, the torch isn't causing too much lense flare and they don't move the camera around too much
 
-This actually performed pretty well if the person on the decode side is in a dark room and they don't move the camera around too much
+I tested it by encoding on a slightly damaged iPhone 6 SE and decoding on a 2018 iPad and it translates better than I expected *sometimes*.
 
-I tested it by encoding on a slightly damaged iPhone 6 SE and decoding on a 2018 iPad and it translates much better than I expected!
+Sometimes it performs very well but then other times it thinks every letter is a T. My current theory is as the app is used it begins to slow down the device and then the tolerances of the timers begin to get out of wack. 
 
-The only downside to using the iPad is it doesn't have a torch so feel like I'm not able to get the full experience of sending a message back a forth.
+The only downside to using the iPad to test is it doesn't have a torch so feel like I'm not able to get the full experience of sending a message back a forth.
 
 # Running the App
 
