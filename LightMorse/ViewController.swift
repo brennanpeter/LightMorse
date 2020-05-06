@@ -304,17 +304,27 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         // Use CoreImage to calculate the histogram for the image
         
-        print(pixelBuffer)
+        //print(pixelBuffer)
         
         let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0)
         let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        let width = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0) / 4
+        let height = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0) / 4
         let byteBuffer = baseAddress?.assumingMemoryBound(to: UInt32.self)
 
         // Get luma value for pixel (43, 17)
-        let luma = ((byteBuffer?[17 * bytesPerRow + 43])!) & 0b11111111
         
-        print(luma)
+        var totatLuma = 0
         
+        for x in (0...width){
+            for y in (0...height){
+                let luma = ((byteBuffer?[y * bytesPerRow + x])!) & 0b11111111
+                totatLuma += Int(luma)
+            }
+        }
+        print(totatLuma)
+        
+        //let luma = ((byteBuffer?[17 * bytesPerRow + 43])!) & 0b11111111
         
     }
     
