@@ -321,7 +321,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         self.decodeDetectsFlash = false
         self.currentMessage = ""
-        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 0.01, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
         RunLoop.current.add(timer, forMode: .common)
         
         // To learn about making a live AVcapture seesion I watched the tutorial at:
@@ -453,6 +453,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         // Handle the spaces and end of transmission
         if (offTimerDuration > 200){
+            print("Detected Space")
             popMorseStack()
             currentMessage += " "
             print("Message: " + currentMessage)
@@ -510,13 +511,14 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func triggerOn(){
         self.decodeDetectsFlash = true
         print("On")
+        print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
         
         // check off phase timer
         // if off phase timer does not exist -> ignore it
  
         if offTimerDuration != 0 {
             
-            // else we must check for the 3 cases of why our light would be off:
+            // else we must check for the other 2 cases of why our light would be off:
             
             // else if the torch has been off from about 2 < duration < 4 units we
             // know the current letter is over so we search the dictionary, print the character
@@ -558,6 +560,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         self.decodeDetectsFlash = false
         
         print("Off")
+        print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
     
         if onTimerDuration != 0 {
             
