@@ -273,8 +273,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     @objc func sendMessage (sender: UIButton) {
         print("Sending")
         
-        timer = Timer.scheduledTimer(timeInterval: 0.01, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
-        
         for c in encodeMessage {
             switch c {
             case ".":
@@ -331,11 +329,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         captureSession = AVCaptureSession()
         
         guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
-        
-        try! captureDevice.lockForConfiguration()
-        captureDevice.focusMode = .locked
-        captureDevice.unlockForConfiguration()
-        
         guard let input = try? AVCaptureDeviceInput(device: captureDevice) else { return }
         
         captureSession.addInput(input)
@@ -452,18 +445,20 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         }
         
         // Handle the spaces and end of transmission
-        if (offTimerDuration > 150){
+        if (offTimerDuration > 40){
             print("Detected Space")
             popMorseStack()
             currentMessage += " "
             print("Message: " + currentMessage)
+            
+            offTimerDuration = 0
             
             // We have to do UI updates Async like this
             DispatchQueue.main.async {
                 self.decodeOutput.text = self.currentMessage
             }
             
-            offTimerDuration = 0
+            
         }
  
         totalPreviousLuma = totatLuma
@@ -481,12 +476,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             currentMessage += currentLetter
             print("Message: " + currentMessage)
             
+            currentMorse = ""   // empty current morse so it can find the next character
             // We have to do UI updates Async like this
             DispatchQueue.main.async {
                 self.decodeOutput.text = self.currentMessage
             }
             
-            currentMorse = ""   // empty current morse so it can find the next character
+            
         }
         else {
             currentMorse = ""
@@ -528,7 +524,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             // else if the torch has been off from about 2 < duration < 4 units we
             // know the current letter is over so we search the dictionary, print the character
             // and wait for a new letter
-            if(offTimerDuration >= 50 && offTimerDuration <= 100) {
+            if(offTimerDuration >= 20 && offTimerDuration <= 40) {
                 popMorseStack()
             }
 
@@ -543,10 +539,10 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     @objc func fireTimer(){
         if (self.decodeDetectsFlash == true){
-            self.onTimerDuration += 5     // our timer steps  times a duration
+            self.onTimerDuration += 1     // our timer steps  times a duration
         }
         else {
-            self.offTimerDuration += 5
+            self.offTimerDuration += 1
         }
         
         print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
@@ -561,18 +557,11 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     func triggerOff(){
         self.decodeDetectsFlash = false
         
-        if (offTimerDuration < 25){
-            return
-        }
-        
-        print("Off")
-        print("On time: " + String(self.onTimerDuration) + " Off time: " + String(self.offTimerDuration))
-    
         if onTimerDuration != 0 {
             
             // if the most recent off state was more than 2 durations ago,
             // then we add a dash to the current character stack
-            if (onTimerDuration >= 50) {
+            if (onTimerDuration >= 20) {
                 currentMorse += "-"
                 print("Detected: -")
             }
