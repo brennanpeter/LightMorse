@@ -27,6 +27,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     let duration = UInt32(250000)    // length of a 1 morse unit in milliseconds
     
+    var totalPreviousLuma = 0
+    
     // hiding and showing the main menu
     func toggleButtons(){
         decodeButton.isHidden =  !decodeButton.isHidden
@@ -300,11 +302,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func calculateLuminance(pixelBuffer: CVImageBuffer){
-        print("calculate luminance")
-        
-        // Use CoreImage to calculate the histogram for the image
-        
-        //print(pixelBuffer)
+        //print("calculate luminance")
         
         let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0)
         let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
@@ -322,7 +320,22 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
                 totatLuma += Int(luma)
             }
         }
-        print(totatLuma)
+        
+        // initialize the total previous luma if it does not yet have a value
+        if (totalPreviousLuma == 0){
+            totalPreviousLuma = totatLuma
+        }
+        
+        if (totatLuma - totalPreviousLuma > 100000){
+            print("ON")
+        }
+        else if(totatLuma - totalPreviousLuma < -100000){
+            print("OFF")
+        }
+        
+        //print(totatLuma)
+        
+        totalPreviousLuma = totatLuma
         
         //let luma = ((byteBuffer?[17 * bytesPerRow + 43])!) & 0b11111111
         
