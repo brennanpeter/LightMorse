@@ -25,6 +25,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     var encodeMessage: String!
     var prettyEncodedMessage: String!
     
+    var captureSession: AVCaptureSession!
+    
     let duration = UInt32(250000)    // length of a 1 morse unit in milliseconds
     
     var totalPreviousLuma = 0
@@ -40,11 +42,22 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     var decodeDetectsFlash: Bool!
     
+    var encodeView: UIView!
+    var decodeView: UIView!
+    
     // hiding and showing the main menu
     func toggleButtons(){
         decodeButton.isHidden =  !decodeButton.isHidden
         encodeButton.isHidden =  !encodeButton.isHidden
         helpButton.isHidden =  !helpButton.isHidden
+    }
+    
+    func toggleEncodeView() {
+        encodeView.isHidden = !encodeView.isHidden
+    }
+    
+    func toggleDecodeView() {
+        decodeView.isHidden = !decodeView.isHidden
     }
     
     // dictionary of characters and their corresponding codes
@@ -86,7 +99,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         "9":"----.|",
         "0":"-----|"
     ]
-    // dictionary of characters and their corresponding codes
+    // dictionary of morse and their corresponding characters
        var morseToCharsDict: [String: String] = [
         ".-":"A",
         "-...":"B",
@@ -114,23 +127,21 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         "-..-":"X",
         "-.--":"Y",
         "--..":"Z",
-        ".----|":"1",
-        "..---|":"2",
-        "...--|":"3",
-        "....-|":"4",
-        ".....|":"5",
-        "-....|":"6",
-        "--...|":"7",
-        "---..|":"8",
-        "----.|":"9",
-        "-----|":"0"
+        ".----":"1",
+        "..---":"2",
+        "...--":"3",
+        "....-":"4",
+        ".....":"5",
+        "-....":"6",
+        "--...":"7",
+        "---..":"8",
+        "----.":"9",
+        "-----":"0"
        ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        
-        
         
         // Initializing some variables for the decode process
         onTimerDuration = 0
@@ -162,7 +173,6 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         helpButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
         self.view.addSubview(helpButton)
         
-        
     }
     
     @objc func decodeButtonAction(sender: UIButton!) {
@@ -183,14 +193,17 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         showHelp()
     }
     
-    func encodeMorse(){
-        let inputLabel = UILabel(frame: CGRect(x: 10, y: 10, width: 100, height: 50))
+    func encodeMorse() {
+        
+        encodeView = UIView(frame: CGRect( x: 0, y: 0, width: UIScreen.main.bounds.width , height: UIScreen.main.bounds.height) )
+        
+        let inputLabel = UILabel(frame: CGRect(x: 60, y: 30, width: 100, height: 50))
         inputLabel.text = "Input"
-        self.view.addSubview(inputLabel)
+        encodeView.addSubview(inputLabel)
         
         // add a text box programatically
         //https://stackoverflow.com/questions/24710041/adding-uitextfield-on-uiview-programmatically-swift/32602425
-        textInput = UITextField(frame: CGRect(x: 50, y: 50, width: 300, height: 50))
+        textInput = UITextField(frame: CGRect(x: 50, y: 80, width: 300, height: 50))
         textInput.placeholder = "Enter your message here"
         textInput.font = UIFont.systemFont(ofSize: 18)
         textInput.borderStyle = UITextField.BorderStyle.roundedRect
@@ -202,14 +215,13 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         textInput.contentVerticalAlignment = UIControl.ContentVerticalAlignment.top
         textInput.delegate = self
         textInput.addTarget(self, action: #selector(textFieldDidChange), for: UIControl.Event.editingChanged)
-        self.view.addSubview(textInput)
+        encodeView.addSubview(textInput)
         
-        let outputLabel = UILabel(frame: CGRect(x: 10, y: 270, width: 100, height: 50))
+        let outputLabel = UILabel(frame: CGRect(x: 50, y: 150, width: 100, height: 50))
         outputLabel.text = "Output"
-        self.view.addSubview(outputLabel)
+        encodeView.addSubview(outputLabel)
         
-        
-        morseOutput = UITextView(frame: CGRect(x: 50, y: 120, width: 300, height: 200))
+        morseOutput = UITextView(frame: CGRect(x: 50, y: 200, width: 300, height: 200))
         morseOutput.font = UIFont.systemFont(ofSize: 18)
         morseOutput.textAlignment = NSTextAlignment.left
         morseOutput.layer.borderColor = UIColor.lightGray.cgColor
@@ -217,18 +229,35 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         morseOutput.layer.cornerRadius = 6
         morseOutput.text = ""
         morseOutput.isEditable = false
-        self.view.addSubview(morseOutput)
+        encodeView.addSubview(morseOutput)
         
         // add an output window showing the converted morse
         // add a button to start encoding
-        let sendButton = UIButton(frame: CGRect(x: 100, y: 420, width: 200, height: 100))
+        let sendButton = UIButton(frame: CGRect(x: 150, y: 420, width: 200, height: 100))
         sendButton.backgroundColor = .purple
         sendButton.layer.cornerRadius = 6
         sendButton.setTitle("Send", for: .normal)
         sendButton.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
-        self.view.addSubview(sendButton)
+        encodeView.addSubview(sendButton)
+        
+        let encodeBackButton = UIButton(frame: CGRect(x: 80, y: 440, width: 60, height: 60))
+        encodeBackButton.backgroundColor = .red
+        encodeBackButton.layer.cornerRadius = 6
+        encodeBackButton.setTitle("Back", for: .normal)
+        encodeBackButton.addTarget(self, action: #selector(encodeBack), for: .touchUpInside)
+        encodeView.addSubview(encodeBackButton)
+        
+        self.view.addSubview(encodeView)
         
     }
+    
+    @objc func encodeBack (sender: UIButton) {
+        // hide the content on the encode page
+        toggleEncodeView()
+        toggleButtons()
+    }
+    
+    
     
     @objc func textFieldDidChange (sender: UITextField) {
         encodeMessage = convertToMorseChars(chars: sender.text!)
@@ -293,18 +322,18 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     
     func decodeMorse(){
         
+        decodeView = UIView(frame: CGRect( x: 0, y: 0, width: UIScreen.main.bounds.width , height: UIScreen.main.bounds.height) )
+        
         self.decodeDetectsFlash = false
         self.currentMessage = ""
         timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
         RunLoop.current.add(timer, forMode: .common)
         
-        
-        
         // To learn about making a live AVcapture seesion I watched the tutorial at:
         // https://www.youtube.com/watch?v=p6GA8ODlnX0
         
         // Set up for the camera     Lots of boilerplate :(
-        let captureSession = AVCaptureSession()
+        captureSession = AVCaptureSession()
         
         guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
         guard let input = try? AVCaptureDeviceInput(device: captureDevice) else { return }
@@ -313,8 +342,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         captureSession.startRunning()
         
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        view.layer.addSublayer(previewLayer)
-        previewLayer.frame = view.frame
+        decodeView.layer.addSublayer(previewLayer)
+        previewLayer.frame = decodeView.frame
         
         let dataOutput = AVCaptureVideoDataOutput()
         dataOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "video queue"))
@@ -325,10 +354,21 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         backButton.backgroundColor = .red
         backButton.layer.cornerRadius = 6
         backButton.setTitle("Back", for: .normal)
-        backButton.addTarget(self, action: #selector(helpButtonAction), for: .touchUpInside)
-
-        self.view.addSubview(backButton)
+        backButton.addTarget(self, action: #selector(decodeBack), for: .touchUpInside)
         
+        
+
+        decodeView.addSubview(backButton)
+        
+        self.view.addSubview(decodeView)
+        
+    }
+    
+    @objc func decodeBack (sender: UIButton) {
+        // hide the content on the encode page
+        captureSession.stopRunning()
+        toggleDecodeView()
+        toggleButtons()
     }
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
