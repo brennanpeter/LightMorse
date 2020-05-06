@@ -273,6 +273,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     @objc func sendMessage (sender: UIButton) {
         print("Sending")
         
+        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
+        
         for c in encodeMessage {
             switch c {
             case ".":
@@ -329,6 +331,11 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         captureSession = AVCaptureSession()
         
         guard let captureDevice = AVCaptureDevice.default(for: .video) else { return }
+        
+        try! captureDevice.lockForConfiguration()
+        captureDevice.focusMode = .locked
+        captureDevice.unlockForConfiguration()
+        
         guard let input = try? AVCaptureDeviceInput(device: captureDevice) else { return }
         
         captureSession.addInput(input)
@@ -341,6 +348,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         let dataOutput = AVCaptureVideoDataOutput()
         dataOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "video queue"))
         captureSession.addOutput(dataOutput)
+        
         
         // Add a button to close the cpature window and bring us back to the main menu
         backButton = UIButton(frame: CGRect(x: 10, y: 10, width: 50, height: 50))
@@ -443,7 +451,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             triggerOff()
         }
         
-        if (offTimerDuration > 40){
+        // Handle the spaces and end of transmission
+        if (offTimerDuration > 200){
             popMorseStack()
             currentMessage += " "
             print("Message: " + currentMessage)
@@ -500,6 +509,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     */
     func triggerOn(){
         self.decodeDetectsFlash = true
+        print("On")
         
         // check off phase timer
         // if off phase timer does not exist -> ignore it
@@ -546,12 +556,14 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     */
     func triggerOff(){
         self.decodeDetectsFlash = false
+        
+        print("Off")
     
         if onTimerDuration != 0 {
             
             // if the most recent off state was more than 2 durations ago,
             // then we add a dash to the current character stack
-            if (onTimerDuration >= 15) {
+            if (onTimerDuration >= 10) {
                 currentMorse += "-"
                 print("Detected: -")
             }
